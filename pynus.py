@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import argparse
 import tealblue
 import termios
 import sys
@@ -13,11 +14,19 @@ def scan_device(adapter):
     with adapter.scan() as scanner:
         for device in scanner:
             if NUS_SERVICE_UUID in device.UUIDs:
+                if (args.address and args.address.upper() != device.address) or\
+                   (args.device and args.device != device.name):
+                    print('Ignoring %s (%s)' % (device.name, device.address))
+                    continue
                 return device
 
 def lookup_device(adapter):
     for device in adapter.devices():
         if NUS_SERVICE_UUID in device.UUIDs:
+            if (args.address and args.address.upper() != device.address) or \
+               (args.device and args.device != device.name):
+                print('Ignoring %s (%s)' % (device.name, device.address))
+                continue
             return device
 
 def run_terminal(rx):
@@ -72,4 +81,13 @@ def nus():
     run_terminal(rx)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+            description='Nordic UART Service client')
+    parser.add_argument('--address',
+            help='Device MAC address')
+    parser.add_argument('--device',
+            help='Connect only to a specific named device')
+
+    args = parser.parse_args()
+
     tealblue.glib_mainloop_wrapper(nus)
